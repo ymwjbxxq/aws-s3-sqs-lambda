@@ -1,0 +1,74 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: 'S3 template'
+
+Parameters:
+  awsRole:
+    Type: String
+    Default: ${opt:awsRole}
+  stage:
+    Type: String
+    Default: ${opt:stage}
+  bucketName:
+    Type: String
+    Default: mybucketname
+
+Mappings:
+  SQS:
+    test:
+      deleteEventSQSArn: myservice-test-DeleteEventFromS3SQS-Arn
+    stage:
+      deleteEventSQSArn: myservice-stage-DeleteEventFromS3SQS-Arn
+    prod:
+      deleteEventSQSArn: myservice-prod-DeleteEventFromS3SQS-Arn
+
+Resources:
+  MyBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${bucketName}
+      Tags:
+        - Key: Name
+          Value: !Sub ${bucketName}
+        - Key: Environment
+          Value: !Sub ${stage}
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteEverythingAfter90Days
+            Status: Enabled
+            ExpirationInDays: 90
+          - Id: ConvertToIntelligentTier
+            Status: Enabled
+            Transitions:
+              - TransitionInDays: 30
+                StorageClass: INTELLIGENT_TIERING
+      NotificationConfiguration:
+        QueueConfigurations:
+          - Event: s3:ObjectRemoved:Delete
+            Queue:
+              Fn::ImportValue: !FindInMap [SQS, !Ref stage, deleteEventSQSArn]
+            
+  MyBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    DependsOn: MyBucket
+    Properties:
+      Bucket: !Ref MyBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: ADMIN
+            Effect: Allow
+            Action:
+              - 's3:DeleteObject'
+            Principal:
+              AWS:
+                - !Sub ${awsRole}
+            Resource:
+              - !Sub "arn:aws:s3:::${bucketName}/*"
+
+Outputs:
+  MyBucket:
+    Value: 
+      Ref: MyBucket
+    Export: 
+      Name: !Sub mybucket-export-name-${stage}
