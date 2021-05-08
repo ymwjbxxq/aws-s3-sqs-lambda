@@ -24,3 +24,39 @@ I have added extra information like:
 
 I tried to make it more "real", but it is what you find on the serverlessland.com patterns page if you strip it all.
 
+The message inside the SQS body look like this:
+
+```javaScript
+{
+    "eventVersion": "2.1",
+    "eventSource": "aws:s3",
+    "awsRegion": "eu-central-1",
+    "eventTime": "2021-05-08T09:31:57.896Z",
+    "eventName": "ObjectRemoved:Delete",
+    "userIdentity": {
+        "principalId": "AWS:xxxxxxx:xxxxx"
+    },
+    "requestParameters": {
+        "sourceIPAddress": "xxxxxxxxxxx"
+    },
+    "responseElements": {
+        "x-amz-request-id": "xxxxxx",
+        "x-amz-id-2": "xxxxxxxx"
+    },
+    "s3": {
+        "s3SchemaVersion": "1.0",
+        "configurationId": "xxxxxxxxxx",
+        "bucket": {
+            "name": "mybucket-test",
+            "ownerIdentity": {
+                "principalId": "xxxxxxxx"
+            },
+            "arn": "arn:aws:s3:::mybucket-test"
+        },
+        "object": {
+            "key": "dir/filename.png",
+            "sequencer": "xxxxx"
+        }
+    }
+}
+```
