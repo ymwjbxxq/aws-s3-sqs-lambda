@@ -1,29 +1,26 @@
-# README #
+# FROM S3 To SQS To Lambda #
 
-This README would normally document whatever steps are necessary to get your application up and running.
+Thanks to events, you can concatenate many serverless services together with minimal effort.
+Many patterns are presented [here](https://serverlessland.com/patterns), and today, I want to play with two of them:
 
-### What is this repository for? ###
+* [S3 to SQS](https://serverlessland.com/patterns/s3-sqs) 
+* [SQS to Lambda](https://serverlessland.com/patterns/sqs-lambda)
 
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
+![picture](https://bitbucket.org/DanBranch/s3-sqs-lambda/downloads/s3_to_sqs_to_lambda.png)
 
-### How do I get set up? ###
+### Why this repository? ###
 
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
+Usually, we work with multiple accounts and environments like test/stage/prod and need to deploy from CI like GitHub or GitLab or similar. 
+For example, I like to split the .yml files based on resources, in this case, S3, SQS and Lambda.
 
-### Contribution guidelines ###
+I show how these two patterns will look like in multiple files in this repository. 
 
-* Writing tests
-* Code review
-* Other guidelines
+Under the resources directory, you will find a .yml file for each service. 
+I have added extra information like:
 
-### Who do I talk to? ###
+* Tags
+* Mappings
+* Policies
 
-* Repo owner or admin
-* Other community or team contact
+I tried to make it more "real", but it is what you find on the serverlessland.com patterns page if you strip it all.
+
