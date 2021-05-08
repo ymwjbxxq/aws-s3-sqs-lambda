@@ -1,0 +1,85 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: 'Lambda template'
+
+Parameters:
+  awsRole:
+    Type: String
+    Default: ${opt:awsRole}
+  stage:
+    Type: String
+    Default: ${opt:stage}
+
+Mappings:
+  LambdaConfig:
+    test:
+      logRetentionDays: 1
+      myBucketName: mybucketname-test
+    stage:
+      logRetentionDays: 3
+      myBucketName: mybucketname-stage
+    prod:
+      logRetentionDays: 30
+      myBucketName: mybucketname-prod
+
+  SQS:
+    test:
+      deleteEventFromS3SQSName: myqueue-test-sqs
+      deleteEventFromS3SQSArn: myservice-test-DeleteEventFromS3SQS-Arn
+      deleteEventFromS3SQSUrl: myservice-test-DeleteEventFromS3SQS-Url
+    stage:
+      deleteEventFromS3SQSName: myqueue-stage-sqs
+      deleteEventFromS3SQSArn: myservice-stage-DeleteEventFromS3SQS-Arn
+      deleteEventFromS3SQSUrl: myservice-stage-DeleteEventFromS3SQS-Url
+    prod:
+      deleteEventFromS3SQSName: myqueue-prod-sqs
+      deleteEventFromS3SQSArn: myservice-prod-DeleteEventFromS3SQS-Arn
+      deleteEventFromS3SQSUrl: myservice-prod-DeleteEventFromS3SQS-Url
+
+Globals:
+  Function:
+    Runtime: nodejs14.x
+    Environment:
+      Variables:
+        environment: !Sub ${stage}
+        AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+
+Resources:
+  DeleteEventFromS3LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}-delete-file
+      RetentionInDays: !FindInMap [LambdaConfig, !Ref stage, logRetentionDays]
+
+  DeleteEventFromS3Lambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: Process delete event from s3 to sqs to lambda
+      FunctionName: !Sub "${AWS::StackName}-delete-event-s3"
+      Handler: DeleteEventFromS3.startExecution
+      CodeUri: DeleteEventFromS3.zip
+      MemorySize: 1024
+      Timeout: 10
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - AWSXrayWriteOnlyAccess
+        - CloudWatchLambdaInsightsExecutionRolePolicy
+        - SQSPollerPolicy:
+            QueueName: !FindInMap [SQS, !Ref stage, deleteEventFromS3SQSName]
+      Tags:
+        Environment: !Sub ${stage}
+        Name: !Sub delete-event-from-s3-${stage}
+      Events:
+        fileDeletionRequested:
+          Type: SQS
+          Properties:
+            Enabled: true
+            Queue:
+              Fn::ImportValue: !FindInMap [SQS, !Ref stage, deleteEventFromS3SQSArn]
+      Environment:
+        Variables:
+          packageManager_input_bucket: !FindInMap [LambdaConfig, !Ref stage, myBucketName]
+          sqsUrl:
+            Fn::ImportValue: !FindInMap [SQS, !Ref stage, deleteEventFromS3SQSUrl]
+    DependsOn:
+      - DeleteEventFromS3LogGroup
