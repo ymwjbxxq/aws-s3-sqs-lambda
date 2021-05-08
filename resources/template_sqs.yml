@@ -1,0 +1,91 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: 'SQS template'
+
+Parameters:
+  awsRole:
+    Type: String
+    Default: ${opt:awsRole}
+  stage:
+    Type: String
+    Default: ${opt:stage}
+  bucketName:
+    Type: String
+    Default: ${opt:bucketName}
+
+Mappings:
+  SQS:
+    test:
+      deleteEventFromS3QueueName: myqueue-test-sqs
+      deleteEventFromS3DeadQueueName: myqueue-dead-test-sqs
+    stage:
+      deleteEventFromS3QueueName: myqueue-stage-sqs
+      deleteEventFromS3DeadQueueName: myqueue-dead-stage-sqs
+    prod:
+      deleteEventFromS3QueueName: myqueue-prod-sqs
+      deleteEventFromS3DeadQueueName: myqueue-dead-prod-sqs
+
+Resources:
+  DeleteEventFromS3SQS:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !FindInMap [SQS, !Ref stage, deleteEventFromS3QueueName]
+      VisibilityTimeout: 60 #6 time lambda timeout
+      Tags:
+        - Key: Name
+          Value: !FindInMap [SQS, !Ref stage, deleteEventFromS3QueueName]
+        - Key: Environment
+          Value: !Sub ${stage}
+      RedrivePolicy:
+        deadLetterTargetArn:
+          Fn::GetAtt:
+            - DeleteEventFromS3S3DeadSQS
+            - Arn
+        maxReceiveCount: 3
+
+  DeleteEventFromS3SQSPolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - Ref: DeleteEventFromS3SQS
+      PolicyDocument:
+        Version: "2012-10-17"
+        Id: DeleteEventFromS3SQSPolicy
+        Statement:
+          - Sid: AllowS3Event
+            Effect: Allow
+            Action:
+              - sqs:SendMessage
+            Principal:
+              Service: s3.amazonaws.com
+            Resource:
+              Fn::GetAtt:
+                - DeleteEventFromS3SQS
+                - Arn
+            Condition:
+              ArnLike: 
+                "aws:SourceArn": !Sub "arn:aws:s3:::${bucketName}"
+
+  DeleteEventFromS3S3DeadSQS:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: !FindInMap [SQS, !Ref stage, deleteEventFromS3DeadQueueName]
+        Tags:
+          - Key: Name
+            Value: !FindInMap [SQS, !Ref stage, deleteEventFromS3DeadQueueName]
+          - Key: Environment
+            Value: !Sub ${stage}
+
+Outputs:
+  DeleteEventFromS3SQSUrl:
+    Value: !Ref DeleteEventFromS3SQS
+    Export: 
+        Name: !Sub myservice-${stage}-DeleteEventFromS3SQS-Url
+  DeleteEventFromS3SQSArn:
+    Description: DeleteEventFromS3S3 Arn
+    Value:
+      Fn::GetAtt: 
+        - DeleteEventFromS3SQS
+        - Arn
+    Export:
+      Name: !Sub myservice-${stage}-DeleteEventFromS3SQS-Arn
