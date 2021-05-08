@@ -11,6 +11,7 @@ Many patterns are presented [here](https://serverlessland.com/patterns), and tod
 ### Why this repository? ###
 
 Usually, we work with multiple accounts and environments like test/stage/prod and need to deploy from CI like GitHub or GitLab or similar. 
+Perhaps you need to deploy only a change on a specific service and avoid deploying all, so this could be the reason for a split.
 For example, I like to split the .yml files based on resources, in this case, S3, SQS and Lambda.
 
 I show how these two patterns will look like in multiple files in this repository. 
@@ -24,7 +25,7 @@ I have added extra information like:
 
 I tried to make it more "real", but it is what you find on the serverlessland.com patterns page if you strip it all.
 
-The message inside the SQS body look like this:
+The message inside the SQS body looks like this:
 
 ```javaScript
 {
