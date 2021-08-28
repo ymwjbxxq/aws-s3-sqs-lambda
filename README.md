@@ -6,7 +6,7 @@ Many patterns are presented [here](https://serverlessland.com/patterns), and tod
 * [S3 to SQS](https://serverlessland.com/patterns/s3-sqs) 
 * [SQS to Lambda](https://serverlessland.com/patterns/sqs-lambda)
 
-![picture](https://bitbucket.org/DanBranch/s3-sqs-lambda/downloads/s3_to_sqs_to_lambda.png)
+![picture](https://github.com/ymwjbxxq/aws-s3-sqs-lambda/blob/master/s3_to_sqs_to_lambda.png)
 
 ### Why this repository? ###
 
